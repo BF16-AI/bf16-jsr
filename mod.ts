@@ -35,16 +35,22 @@ export interface ClientOptions {
   fetchImpl?: typeof fetch;
 }
 
+function readEnvKey(): string | undefined {
+  try {
+    const deno = (globalThis as { Deno?: { env?: { get(k: string): string | undefined } } }).Deno;
+    return deno?.env?.get("BF16_API_KEY");
+  } catch {
+    return undefined;
+  }
+}
+
 export class Client {
   readonly baseUrl: string;
   private readonly apiKey?: string;
   private readonly fetchImpl: typeof fetch;
 
   constructor(options: ClientOptions = {}) {
-    const envKey = typeof globalThis !== "undefined" && "Deno" in globalThis
-      ? (globalThis as { Deno?: { env?: { get(k: string): string | undefined } } }).Deno?.env?.get("BF16_API_KEY")
-      : undefined;
-    this.apiKey = options.apiKey ?? envKey;
+    this.apiKey = options.apiKey !== undefined ? options.apiKey : readEnvKey();
     this.baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/+$/, "");
     this.fetchImpl = options.fetchImpl ?? fetch;
   }
